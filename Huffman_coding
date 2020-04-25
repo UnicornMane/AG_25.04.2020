@@ -1,0 +1,143 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <queue>
+#include <unordered_map>
+#define _USE_MATH_DEFINES
+#include <cmath>
+#include <algorithm>
+#include <set>
+
+using namespace std;
+constexpr int INF = 2e9;
+constexpr double e = 0.000001;
+
+struct Node
+{
+	char ch;
+	int freq;
+	Node* l, * r;
+};
+
+Node* getNode(const char &ch, const int &freq, Node* l, Node* r)
+{
+	Node* tree = new Node();
+
+	tree->ch = ch;
+	tree->freq = freq;
+	tree->l = l;
+	tree->r = r;
+
+	return tree;
+}
+
+struct comp
+{
+	bool operator()(Node* &l, Node* &r) const
+	{
+		return l->freq > r->freq;
+	}
+};
+
+auto encode(Node* root, const string& str, unordered_map<char, string>& huffman_code) -> void
+{
+	if (root == nullptr)
+		return;
+
+	if (!root->l && !root->r)
+	{
+		huffman_code[root->ch] = str;
+	}
+	encode(root->l, str + '0', huffman_code);
+	encode(root->r, str + '1', huffman_code);
+}
+
+auto decode(Node* &root, int& id, string str) -> void
+{
+	if (root == nullptr)
+	{
+		return;
+	}
+
+	if (!root->l && !root->r)
+	{
+		cout << root->ch;
+		return;
+	}
+
+	id++;
+
+	if (str[id] == '0')
+	{
+		decode(root->l, id, str);
+	}
+	else
+	{
+		decode(root->r, id, str);
+	}
+}
+
+auto buildHuffmanTree(const string& line) -> void
+{
+	unordered_map<char, int> freq;
+	for (char ch : line)
+	{
+		freq[ch]++;
+	}
+
+	priority_queue<Node*, vector<Node*>, comp> pq;
+
+	for (const auto &pair : freq)
+	{
+		pq.push(getNode(pair.first, pair.second, nullptr, nullptr));
+	}
+	
+	while (pq.size() != 1)
+	{
+		Node* l = pq.top();
+		pq.pop();
+		Node* r = pq.top();
+		pq.pop();
+		const int sum = l->freq + r->freq;
+		pq.push(getNode('\0', sum, l, r));
+	}
+	
+	Node* root = pq.top();
+
+	unordered_map<char, string> huffmanCode;
+	encode(root, "", huffmanCode);
+
+	cout << "Huffman Codes:\n";
+	
+	for (const auto& pair : huffmanCode)
+	{
+		cout << pair.first << " " << pair.second << '\n';
+	}
+	
+	string str;
+	
+	for (auto& ch : line)
+	{
+		str += huffmanCode[ch];
+	}
+	
+	cout << "\nEncoded:\n" << str;
+	
+	int id = -1;
+	
+	cout << "\nDecoded: \n";
+	
+	while (id < static_cast<int>(str.size()) - 1)
+	{
+		decode(root, id, str);
+	}
+}
+
+auto main() -> int
+{
+	cout << "string:\n";
+	string str;
+	getline(cin, str);
+
+	buildHuffmanTree(str);
+}
